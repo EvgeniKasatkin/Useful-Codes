@@ -1,0 +1,7 @@
+Flask==2.0.3
+gunicorn==19.9.0
+python-dotenv==1.0.1
+google-cloud-bigquery==1.28.0
+google-api-core==1.33.2
+google-cloud-secret-manager==2.12.6
+
