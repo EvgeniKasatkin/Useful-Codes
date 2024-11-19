@@ -131,23 +131,6 @@ SELECT	distinct *,
 FROM	MyCalls2 
 )
 
---UPDATE	dwh.Fact_Contacts
---SET		is_succeeded = (SELECT is_succeeded FROM MyCalls3 WHERE	phone1 = Fact_Contacts.phone1 ANd	phone2 = Fact_Contacts.phone2),
---		is_declined = (SELECT is_declined FROM MyCalls3 WHERE	phone1 = Fact_Contacts.phone1 ANd	phone2 = Fact_Contacts.phone2),
---		is_unreachable = (SELECT is_unreachable FROM MyCalls3 WHERE	phone1 = Fact_Contacts.phone1 ANd	phone2 = Fact_Contacts.phone2),
---		is_finished = (SELECT is_finished FROM MyCalls3 WHERE	phone1 = Fact_Contacts.phone1 ANd	phone2 = Fact_Contacts.phone2),
-
---		contact_stage_id = (SELECT contact_stage_id FROM MyCalls3 WHERE	phone1 = Fact_Contacts.phone1 ANd	phone2 = Fact_Contacts.phone2),
---		Unreachable_Calls_cnt = (SELECT Unreachable_Calls_cnt FROM MyCalls3 WHERE	phone1 = Fact_Contacts.phone1 ANd	phone2 = Fact_Contacts.phone2),
---		First_Call_Response = (SELECT First_Call_Response FROM MyCalls3 WHERE	phone1 = Fact_Contacts.phone1 ANd	phone2 = Fact_Contacts.phone2),
---		First_Call_Success = (SELECT First_Call_Success FROM MyCalls3 WHERE	phone1 = Fact_Contacts.phone1 ANd	phone2 = Fact_Contacts.phone2),
---		finish_date_datetime = (SELECT finish_date_datetime FROM MyCalls3 WHERE	phone1 = Fact_Contacts.phone1 ANd	phone2 = Fact_Contacts.phone2),
---		Total_Calls_cnt = (SELECT Total_Calls_cnt FROM MyCalls3 WHERE	phone1 = Fact_Contacts.phone1 ANd	phone2 = Fact_Contacts.phone2),
---		contact_result_id = (SELECT contact_result_id FROM MyCalls3 WHERE	phone1 = Fact_Contacts.phone1 ANd	phone2 = Fact_Contacts.phone2)
-
---ORDER BY finish_datetime_candidate DESC
-
-
 INSERT
 INTO	[dwh].[Fact_Contacts] (phone1, phone2,
 								created_datetime,
@@ -163,4 +146,26 @@ SELECT	Iif ([phone_from] < [phone_to], [phone_from], [phone_to]),
 
 FROM	[dwh].[Fact_PhoneCall]
 GROUP BY	Iif ([phone_from] < [phone_to], [phone_from], [phone_to]),
-			Iif ([phone_from] > [phone_to], [phone_from], [phone_to])
+			Iif ([phone_from] > [phone_to], [phone_from], [phone_to]);
+
+
+
+--Simple example merge (INSERT+UPDATE):
+
+MERGE INTO dwh.Fact_PhoneCall pc
+USING (SELECT DISTINCT * from dwh.temp_phone_call) tpc
+ON pc.phone_from = tpc.phone_from and pc.phone_to = tpc.phone_to
+WHEN MATCHED THEN
+  UPDATE SET Total_Calls_cnt = tpc.Total_Calls_cnt, finish_date_datetime = tpc.finish_date_datetime, load_dttm = current_timestamp --all columns
+WHEN NOT MATCHED THEN
+  INSERT (Total_Calls_cnt, finish_date_datetime, load_dttm)
+  VALUES (tpc.Total_Calls_cnt, tpc.finish_date_datetime, tpc.load_dttm);
+ 
+
+
+
+
+
+
+
+
